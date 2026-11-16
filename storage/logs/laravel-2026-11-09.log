@@ -1,0 +1,16 @@
+[2026-11-09 17:27:21] local.ERROR: There are no commands defined in the "viem" namespace.
+
+Did you mean this?
+    view {"exception":"[object] (Symfony\\Component\\Console\\Exception\\NamespaceNotFoundException(code: 0): There are no commands defined in the \"viem\" namespace.
+
+Did you mean this?
+    view at D:\\PingPong-Mania\\vendor\\symfony\\console\\Application.php:606)
+[stacktrace]
+#0 D:\\PingPong-Mania\\vendor\\symfony\\console\\Application.php(659): Symfony\\Component\\Console\\Application->findNamespace('viem')
+#1 D:\\PingPong-Mania\\vendor\\symfony\\console\\Application.php(237): Symfony\\Component\\Console\\Application->find('viem:clear')
+#2 D:\\PingPong-Mania\\vendor\\symfony\\console\\Application.php(149): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 D:\\PingPong-Mania\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Application.php(90): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 D:\\PingPong-Mania\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(133): Illuminate\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#5 D:\\PingPong-Mania\\artisan(37): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#6 {main}
+"} 

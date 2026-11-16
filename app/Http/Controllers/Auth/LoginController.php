@@ -26,14 +26,18 @@ class LoginController extends Controller
      * @var string
      */
     
+
 protected function redirectTo()
 {
-    if (auth()->user()->role === 'admin') {
+    $role = auth()->user()->role;
+
+    if (in_array($role, ['super_admin', 'admin'])) {
         return '/admin/dashboard';
     }
 
     return '/user-dashboard';
 }
+
 
 
     /**

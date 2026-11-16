@@ -2,50 +2,195 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Client;
 use RuntimeException;
 
 class RaspberryPiClient
 {
+    protected $baseUrl;
+    protected $timeout;
+
+    public function __construct()
+    {
+        $this->baseUrl = rtrim(
+            (string) config('pingpong.raspberry_url'),
+            '/'
+        );
+
+        $this->timeout = max(
+            1,
+            (int) config('pingpong.request_timeout', 5)
+        );
+
+        if (
+            $this->baseUrl === '' ||
+            strpos($this->baseUrl, 'http://') !== 0
+        ) {
+            throw new RuntimeException(
+                'Alamat Pico WH belum dikonfigurasi dengan benar.'
+            );
+        }
+
+        if (!function_exists('curl_init')) {
+            throw new RuntimeException(
+                'Ekstensi cURL PHP belum aktif.'
+            );
+        }
+    }
+
+    public function status()
+    {
+        return $this->request('/status');
+    }
+
+    // START wajib membawa seluruh pengaturan latihan.
+    public function start(array $settings = [])
+    {
+        $settings['action'] = 'start';
+
+        return $this->send($settings);
+    }
+
+    public function stop()
+    {
+        return $this->send([
+            'action' => 'stop'
+        ]);
+    }
+
+    public function configure(array $settings)
+    {
+        $settings['action'] = 'configure';
+
+        return $this->send($settings);
+    }
+
+    protected function request(
+        $endpoint,
+        $method = 'GET',
+        $payload = null
+    ) {
+        $url = $this->baseUrl . $endpoint;
+        $ch = curl_init($url);
+
+        $headers = [
+            'Accept: application/json'
+        ];
+
+        $options = [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => $this->timeout,
+            CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_HTTPHEADER => $headers,
+        ];
+
+        if ($payload !== null) {
+            $json = json_encode($payload);
+
+            if ($json === false) {
+                throw new RuntimeException(
+                    'Gagal membuat data JSON untuk Pico WH.'
+                );
+            }
+
+            $options[CURLOPT_POSTFIELDS] = $json;
+            $options[CURLOPT_HTTPHEADER][] =
+                'Content-Type: application/json';
+        }
+
+        curl_setopt_array($ch, $options);
+
+        $body = curl_exec($ch);
+
+        if ($body === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            throw new RuntimeException(
+                'Koneksi ke Pico WH gagal: ' . $error
+            );
+        }
+
+        $httpStatus = curl_getinfo(
+            $ch,
+            CURLINFO_HTTP_CODE
+        );
+
+        curl_close($ch);
+
+        if ($httpStatus < 200 || $httpStatus >= 300) {
+            throw new RuntimeException(
+                'Pico WH memberikan HTTP ' .
+                $httpStatus . '. Respons: ' . $body
+            );
+        }
+
+        $decoded = json_decode($body, true);
+
+        if (!is_array($decoded)) {
+            throw new RuntimeException(
+                'Respons Pico WH bukan JSON yang valid.'
+            );
+        }
+
+        if (
+            isset($decoded['success']) &&
+            !$decoded['success']
+        ) {
+            throw new RuntimeException(
+                isset($decoded['message'])
+                    ? $decoded['message']
+                    : 'Pico WH menolak perintah.'
+            );
+        }
+
+        return $decoded;
+    }
+
     public function send(array $command)
     {
-        $baseUrl = rtrim((string) config('pingpong.raspberry_url'), '/');
-        $token = (string) config('pingpong.raspberry_token');
+        $action = isset($command['action'])
+            ? $command['action']
+            : '';
 
-        if ($baseUrl === '' || $token === '') {
-            throw new RuntimeException('Koneksi Raspberry Pi belum dikonfigurasi. Atur RASPBERRY_PI_URL dan RASPBERRY_PI_TOKEN di .env.');
+        if (!in_array(
+            $action,
+            ['start', 'configure', 'stop']
+        )) {
+            throw new RuntimeException(
+                'Perintah Pico WH tidak dikenali.'
+            );
         }
 
-        if (strpos($baseUrl, 'http://') !== 0 && strpos($baseUrl, 'https://') !== 0) {
-            throw new RuntimeException('Alamat Raspberry Pi harus menggunakan http:// atau https://.');
+        // START dan CONFIGURE membutuhkan pengaturan lengkap.
+        if (
+            $action === 'start' ||
+            $action === 'configure'
+        ) {
+            $required = [
+                'mode',
+                'speed',
+                'interval_seconds',
+                'direction'
+            ];
+
+            foreach ($required as $field) {
+                if (
+                    !isset($command[$field]) ||
+                    $command[$field] === ''
+                ) {
+                    throw new RuntimeException(
+                        'Pengaturan ' . $field .
+                        ' belum tersedia.'
+                    );
+                }
+            }
         }
 
-        $client = new Client([
-            'timeout' => max(1, (int) config('pingpong.request_timeout', 3)),
-            'connect_timeout' => 2,
-            'http_errors' => false,
-        ]);
-
-        try {
-            $response = $client->post($baseUrl . '/api/control', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $command,
-            ]);
-        } catch (\Exception $e) {
-            throw new RuntimeException('Raspberry Pi tidak dapat dijangkau di jaringan lokal. Pastikan perangkat menyala dan alamat IP benar.');
-        }
-
-        $status = $response->getStatusCode();
-        if ($status < 200 || $status >= 300) {
-            throw new RuntimeException('Raspberry Pi menolak perintah (HTTP ' . $status . '). Periksa token dan layanan pengendali.');
-        }
-
-        $body = (string) $response->getBody();
-        $decoded = json_decode($body, true);
-        return is_array($decoded) ? $decoded : ['accepted' => true];
+        return $this->request(
+            '/' . $action,
+            'POST',
+            $command
+        );
     }
 }

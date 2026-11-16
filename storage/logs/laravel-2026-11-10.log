@@ -1,0 +1,4 @@
+[2026-11-10 23:25:14] local.ERROR: Namespace declaration statement has to be the very first statement or after any declare call in the script {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): Namespace declaration statement has to be the very first statement or after any declare call in the script at D:\\PingPong-Mania\\app\\User.php:4)
+[stacktrace]
+#0 {main}
+"} 

@@ -13,7 +13,7 @@ class AdminMiddleware
             return redirect()->route('login');
         }
 
-        if (Auth::user()->role !== 'admin') {
+        if (!in_array(Auth::user()->role, ['admin', 'super_admin'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman admin.');
         }
 

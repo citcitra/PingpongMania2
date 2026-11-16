@@ -14,7 +14,7 @@ class UserMiddleware
         }
 
         if (Auth::user()->role !== 'user') {
-            abort(403, 'Akses khusus pengguna.');
+            abort(403, 'Halaman ini hanya dapat diakses oleh pengguna.');
         }
 
         return $next($request);

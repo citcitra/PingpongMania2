@@ -1,0 +1,12 @@
+[2026-11-13 16:35:37] local.ERROR: Namespace declaration statement has to be the very first statement or after any declare call in the script {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): Namespace declaration statement has to be the very first statement or after any declare call in the script at D:\\PingPong-Mania\\app\\Services\\RaspberryPiClient.php:4)
+[stacktrace]
+#0 {main}
+"} 
+[2026-11-13 16:52:15] local.ERROR: Namespace declaration statement has to be the very first statement or after any declare call in the script {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): Namespace declaration statement has to be the very first statement or after any declare call in the script at D:\\PingPong-Mania\\app\\Services\\RaspberryPiClient.php:4)
+[stacktrace]
+#0 {main}
+"} 
+[2026-11-13 16:53:52] local.ERROR: Namespace declaration statement has to be the very first statement or after any declare call in the script {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): Namespace declaration statement has to be the very first statement or after any declare call in the script at D:\\PingPong-Mania\\app\\Services\\RaspberryPiClient.php:4)
+[stacktrace]
+#0 {main}
+"} 
