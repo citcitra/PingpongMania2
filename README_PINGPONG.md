@@ -1,53 +1,151 @@
-# PingPong Mania — panduan implementasi
+# 🏓 PingPong Mania
+### Sistem Mesin Pelontar Bola Ping Pong Otomatis Berbasis Web dan Raspberry Pi Pico WH
 
-Project ini merupakan rombakan awal dari template Laravel restoran menjadi dashboard kontrol latihan pingpong. Target kompatibilitas saat ini tetap Laravel 5.8 agar perubahan lebih kecil. Karena Laravel 5.8 sudah lama dan tidak cocok dengan PHP modern, jangan menjalankannya memakai PHP 8.2/8.4.
+PingPong Mania merupakan proyek pengembangan sistem mesin pelontar bola ping pong otomatis untuk mendukung latihan tenis meja. Sistem ini menggabungkan dashboard berbasis web menggunakan Laravel dengan perangkat keras yang dikendalikan oleh Raspberry Pi Pico WH.
 
-## 1. Persiapan lingkungan
+Pengguna dapat mengatur mode latihan, kecepatan pelontaran, interval waktu, serta arah pelontaran melalui dashboard. Sistem juga dikembangkan untuk memantau kondisi perangkat dan mendukung pencatatan riwayat latihan.
 
-- Untuk menjalankan versi Laravel 5.8 yang ada, gunakan lingkungan PHP 7.4 yang terpisah dan cocokkan extension di `php.ini` (`openssl`, `pdo_mysql`, `mbstring`, `fileinfo`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath` jika diperlukan).
-- PHP 7.4 juga sudah tidak mendapat dukungan keamanan. Ini hanya pilihan kompatibilitas sementara untuk pengembangan lokal; sebelum dipublikasikan, rencanakan upgrade ke versi Laravel/PHP yang masih didukung.
-- Jangan mengedit file di `vendor/` untuk menutupi deprecation PHP. Perubahan vendor mudah hilang dan tidak menyelesaikan akar masalah.
+---
 
-## 2. Instalasi di Windows
+## 1. Teknologi yang Digunakan
 
-1. Ekstrak project ke folder kerja, misalnya `C:\Users\<username>\Laravel-Restoran`.
-2. Salin `.env.example` menjadi `.env`. Jangan unggah `.env` ke repositori atau membagikan isinya.
-3. Buat database MySQL bernama `pingpong_mania` lewat phpMyAdmin.
-4. Sesuaikan DB_USERNAME/DB_PASSWORD di `.env`.
-5. Dari CMD, pastikan executable PHP kompatibel berada di PATH atau gunakan path lengkap:
-   - `php -v` (harus menunjukkan PHP 7.4.x untuk stack lama ini)
-   - `composer install`
-   - `php artisan key:generate`
-   - `php artisan config:clear`
-   - `php artisan migrate`
-   - `php artisan serve`
-6. Buka `http://127.0.0.1:8000`, daftar akun, lalu masuk ke dashboard.
+### Perangkat Lunak
+- **Framework:** Laravel 5.8
+- **Bahasa pemrograman backend:** PHP 7.4
+- **Database:** MySQL
+- **Frontend:** Blade Template, HTML, CSS, dan JavaScript
+- **Komunikasi perangkat:** HTTP melalui jaringan Wi-Fi
+- **IDE mikrokontroler:** Arduino IDE
 
-Jika project pernah memakai database restoran, backup database terlebih dahulu. Migration baru menambahkan tabel latihan dan kolom role; migration lama template masih ada, tetapi route restoran tidak lagi dipakai dari `routes/web.php`.
+### Perangkat Keras
+- Raspberry Pi Pico WH sebagai pengendali utama.
+- Driver motor L298N.
+- Motor DC gearbox untuk mekanisme pelontar.
+- Servo untuk pengaturan arah pelontaran.
+- Servo untuk mekanisme feeder atau pengumpan bola.
+- Sensor inframerah untuk mendeteksi bola.
+- Catu daya untuk motor dan rangkaian.
 
-## 3. Integrasi Raspberry Pi
+### Pemetaan Pin Raspberry Pi Pico WH
 
-1. Sambungkan server Laravel dan Raspberry Pi ke jaringan lokal yang sama.
-2. Tentukan IP Raspberry Pi dan isi `RASPBERRY_PI_URL=http://IP_RASPBERRY:5000` di `.env`.
-3. Buat token rahasia panjang dengan `python -c "import secrets; print(secrets.token_urlsafe(48))"`. Isi ke `RASPBERRY_PI_TOKEN` di Laravel dan `PINGPONG_API_TOKEN` di Raspberry Pi. Jangan masukkan token ke JavaScript, view, atau Git.
-4. Ikuti `raspberry/README.md`. Service Raspberry Pi yang disertakan masih **kerangka**: belum menggerakkan motor karena jenis Pi, motor, dan driver belum teridentifikasi. `driver_adapter.py` harus diimplementasikan dan diuji terlebih dahulu.
-5. Setelah menyimpan `.env`, jalankan `php artisan config:clear`.
-6. API Laravel akan meneruskan perintah ke `POST /api/control`; jika Pi tidak tersedia atau belum menerima perintah, UI akan menampilkan error. Respons sukses hanya berarti API Pi menerima perintah, bukan bukti fisik bola benar-benar terlontar.
+| Komponen | GPIO Pico WH |
+|---|---|
+| L298N IN1 | GP9 |
+| L298N IN2 | GP10 |
+| L298N IN3 | GP11 |
+| L298N IN4 | GP12 |
+| L298N ENA | GP6 |
+| L298N ENB | GP7 |
+| Servo pengarah | GP15 |
+| Servo feeder | GP14 |
+| Sensor bola 1 | GP2 |
+| Sensor bola 2 | GP3 |
+| Sensor bola 3 | GP4 |
 
-## 4. Fitur yang dibuat
+---
 
-- Landing page PingPong Mania.
-- Redirect login/register ke dashboard.
-- Dashboard statistik dan kontrol mode, kecepatan, interval, serta arah.
-- Riwayat sesi tersimpan per pengguna dan filter tanggal/mode.
-- Profil dan ganti password dengan verifikasi password lama.
-- Kontrol mesin hanya tersedia untuk pengguna login, dilindungi CSRF dan validasi server. START/CONFIGURE dibatasi rate-limit; STOP memiliki endpoint terpisah agar tidak terhalang limit START/CONFIGURE.
-- Komunikasi backend ke Raspberry Pi memakai bearer token dari environment.
+## 2. Persiapan Lingkungan Pengembangan
 
-## 5. Keamanan dan batasan
+Proyek ini masih menggunakan Laravel 5.8 sehingga lingkungan pengembangan perlu disesuaikan dengan versi PHP yang kompatibel.
 
-- Jangan expose API Raspberry Pi langsung ke internet; batasi firewall ke server Laravel dan gunakan jaringan terisolasi. HTTP bearer token di LAN tidak terenkripsi; untuk jaringan yang tidak sepenuhnya tepercaya gunakan HTTPS/VPN.
-- Gunakan emergency stop fisik, interlock, watchdog timeout, dan default motor OFF. Tombol STOP web tidak dapat menjamin berhenti bila jaringan/perangkat mati.
-- Admin role ditambahkan pada schema untuk pengembangan berikutnya, tetapi halaman admin belum dibuat.
-- Skor belum diukur otomatis; kolom skor disediakan untuk integrasi sensor/evaluasi berikutnya.
-- Setelah deployment, set `APP_DEBUG=false`, HTTPS, secret unik, backup database, dan update framework ke versi yang didukung.
+### Persyaratan
+- Windows 10/11.
+- PHP 7.4.
+- Composer.
+- MySQL atau MariaDB.
+- XAMPP atau layanan database MySQL yang sesuai.
+- Arduino IDE.
+- Browser.
+- Raspberry Pi Pico WH.
+
+**Catatan kompatibilitas:** PHP 7.4 sudah tidak mendapatkan dukungan keamanan. Versi tersebut digunakan untuk menjaga kompatibilitas proyek Laravel 5.8 selama pengembangan lokal. Upgrade framework dan PHP perlu direncanakan sebelum sistem digunakan secara publik.
+
+---
+
+## 3. Instalasi dan Menjalankan Laravel
+
+Lokasi proyek saat ini:
+
+```text
+D:\PingPong-Mania
+```
+
+### Langkah instalasi
+
+1. Buka CMD.
+2. Masuk ke direktori proyek:
+
+```cmd
+cd /d D:\PingPong-Mania
+```
+
+3. Pastikan versi PHP:
+
+```cmd
+php -v
+```
+
+Pastikan menggunakan PHP 7.4 yang telah dikonfigurasi.
+
+4. Instal dependency apabila diperlukan:
+
+```cmd
+composer install
+```
+
+5. Siapkan file `.env` berdasarkan `.env.example` jika belum tersedia.
+6. Atur konfigurasi database pada `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pingpong_mania
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Sesuaikan nama database dan kredensial dengan konfigurasi MySQL lokal.
+
+7. Jalankan migrasi apabila database belum disiapkan:
+
+```cmd
+php artisan migrate
+```
+
+8. Bersihkan cache konfigurasi:
+
+```cmd
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan route:clear
+```
+
+9. Jalankan aplikasi:
+
+```cmd
+php artisan serve
+```
+
+10. Buka aplikasi melalui browser:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## 4. Integrasi Laravel dengan Raspberry Pi Pico WH
+
+### 4.1 Konfigurasi Access Point
+
+Raspberry Pi Pico WH saat ini dikonfigurasi sebagai Access Point (AP), sehingga perangkat dapat membentuk jaringan Wi-Fi sendiri.
+
+Konfigurasi jaringan:
+
+| Konfigurasi | Nilai |
+|---|---|
+| Nama Wi-Fi (SSID) | PicoWH_kel2 |
+| Password | kelompok2 |
+| IP Address Pico WH | 192.168.4.1 |
